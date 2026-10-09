@@ -44,7 +44,7 @@ const par = (x: number, y: number): CSSProperties => ({
 })
 
 /** A layered, animated night landscape: twinkling stars, drifting aurora and mist, fireflies and pointer parallax. */
-export default function LiveScene({ theme, lite = false, track = false }: { theme: string; lite?: boolean; /** Drive the parallax from the pointer anywhere in the window (for full-page backdrops). */ track?: boolean }) {
+export default function LiveScene({ theme, lite = false, track = false, hero = false }: { theme: string; lite?: boolean; /** The home hero card's scene: held perfectly still in Moderate and Minimal visuals (see index.css). */ hero?: boolean; /** Drive the parallax from the pointer anywhere in the window (for full-page backdrops). */ track?: boolean }) {
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!track || isTouchDevice() || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !window.matchMedia('(pointer: fine)').matches) return
@@ -88,7 +88,7 @@ export default function LiveScene({ theme, lite = false, track = false }: { them
   }, [isTouch])
 
   return (
-    <div ref={root} aria-hidden="true" className="scene absolute inset-0 overflow-hidden" style={t.v as unknown as CSSProperties}>
+    <div ref={root} aria-hidden="true" className={`scene${hero ? ' scene-hero' : ''} absolute inset-0 overflow-hidden`} style={t.v as unknown as CSSProperties}>
       <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%)' }} />
       {!lite && art.stars.map((s, i) => (
         <i key={i} className="scene-star" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, '--d': `${s.d}s`, '--dl': `${s.dl}s` } as CSSProperties} />

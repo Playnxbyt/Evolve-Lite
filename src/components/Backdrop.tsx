@@ -11,16 +11,12 @@ function WallVideo({ url, style }: { url: string; style: CSSProperties }) {
   useEffect(() => {
     const v = ref.current
     if (!v) return
-    // Rests while the app is in the background, and while the sidebar is resizing. Cards expanding (data-motion) no longer pause it.
-    const root = document.documentElement
+    // Rests only while the app is in the background. Resizing never pauses it.
     const sync = () => {
-      const resting = document.hidden || root.hasAttribute('data-sb-moving')
-      if (resting) v.pause(); else v.play().catch(() => { /* needs a gesture: stays on its first frame */ })
+      if (document.hidden) v.pause(); else v.play().catch(() => { /* needs a gesture: stays on its first frame */ })
     }
     document.addEventListener('visibilitychange', sync)
-    const mo = new MutationObserver(sync)
-    mo.observe(root, { attributes: true, attributeFilter: ['data-sb-moving'] })
-    return () => { document.removeEventListener('visibilitychange', sync); mo.disconnect() }
+    return () => { document.removeEventListener('visibilitychange', sync) }
   }, [])
   return (
     <video ref={ref} key={src} src={src} autoPlay muted loop playsInline preload="auto" disablePictureInPicture disableRemotePlayback

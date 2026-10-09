@@ -5,7 +5,6 @@ import {
 } from '../lib/core'
 import { Icon } from './Icons'
 import Collapse from './Collapse'
-import { setMotion } from '../lib/motion'
 import SmoothHeight from './SmoothHeight'
 import { LiveClock } from './DigitalClock'
 import { RingArc, RingValue } from './RingProgress'
@@ -99,7 +98,6 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
   const [open, setOpen] = useState(false)
   const [allNotes, setAllNotes] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
-  useEffect(() => () => setMotion('home-hero', false), [])
   const [pinned, setPinned] = useState<string | null>(null)
   const [flipping, setFlipping] = useState<string | null>(null)
   const [notes, setNotes] = useState<Note[]>(() => read<Note[]>(NOTES_KEY, []))
@@ -239,12 +237,12 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
     const m = Math.floor((now.getTime() - at) / 60000)
     return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`
   }
-  // Parallax follows the pointer at most once per frame, and sits still while the card is resizing.
+  // Parallax follows the pointer at most once per frame, .
   const nudgeFrame = useRef(0)
   const nudge = (e: PointerEvent<HTMLElement>) => {
     if (e.pointerType === 'touch' || isTouchDevice()) return
     const el = heroRef.current
-    if (!el || nudgeFrame.current || el.hasAttribute('data-moving')) return
+    if (!el || nudgeFrame.current) return
     const { clientX, clientY } = e
     nudgeFrame.current = requestAnimationFrame(() => {
       nudgeFrame.current = 0
@@ -253,8 +251,6 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
       el.style.setProperty('--py', String(((clientY - r.top) / r.height - 0.5) * 2))
     })
   }
-  // While the focus list opens or closes, the orb/pet loops are parked (see index.css). The wallpaper (video, live scene) keeps playing.
-  const onMotion = (moving: boolean) => { heroRef.current?.toggleAttribute('data-moving', moving); setMotion('home-hero', moving) }
   const settle = () => { heroRef.current?.style.setProperty('--px', '0'); heroRef.current?.style.setProperty('--py', '0') }
   const delay = (n: number) => ({ animationDelay: `${n * 90}ms` })
   const btn = 'rounded-lg border border-white/10 px-3.5 py-2 text-sm transition-colors hover:border-teal/40 hover:text-teal'
@@ -280,7 +276,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
           wall.kind === 'video'
             ? <video src={wall.url} autoPlay muted loop playsInline aria-hidden="true" className="absolute inset-0 size-full object-cover" />
             : <img src={wall.url} alt="" className="wall-zoom absolute inset-0 size-full object-cover" />
-        ) : <LiveScene theme={scene.theme} />}
+        ) : <LiveScene theme={scene.theme} hero />}
         <div aria-hidden="true" className="absolute inset-0" style={{ backgroundColor: `rgba(3, 9, 14, ${scene.dim})` }} />
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-black/45 via-transparent to-transparent" />
 
@@ -332,7 +328,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
 
             <div className="space-y-4">
               <section className="glass liquid glass-live overflow-hidden rounded-2xl">
-                <SmoothHeight onMotion={onMotion}>
+                <SmoothHeight>
                 <button onClick={() => tasks.length && setOpen(o => !o)} aria-expanded={open} aria-controls="focus-list" disabled={!tasks.length}
                   className="block w-full rounded-t-2xl px-5 pb-1 pt-4 text-left transition-colors hover:bg-white/[0.03]">
                   <span className="flex items-center justify-between gap-3">
@@ -395,7 +391,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
                 )}
                 </SmoothHeight>
 
-                <Collapse id="focus-list" open={open} onMotion={onMotion}>
+                <Collapse id="focus-list" open={open}>
                   <div className="fl-list" data-open={open}>
                     <ul className="max-h-72 space-y-1 overflow-y-auto overscroll-contain border-t border-white/10 px-3 py-3">
                       {pickList.map((t, i) => (

@@ -404,8 +404,6 @@ body::after {
   opacity: 1; transform: none;
   transition: opacity 0.36s ease var(--d), transform 0.48s cubic-bezier(0.22, 1, 0.36, 1) var(--d), background-color 0.2s ease;
 }
-/* While the hero card is resizing, park the always-on background loops so the resize gets the whole frame budget. */
-[data-moving] .glass-live::after { animation-play-state: paused !important; }
 
 /* ───────── Digital clock ───────── */
 .clk { --clk: #64e8d3; display: inline-flex; align-items: baseline; gap: 0.3em; font-size: 2.25rem; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); }
@@ -1416,7 +1414,6 @@ body.perf-lite .pet-tail, body.perf-lite .pet-ear { animation: none; }
 @media (prefers-reduced-motion: reduce) { .orb *, .orb-glow, .orb-core::before, .orb-ring { animation: none !important; } }
 body.perf-lite .orb-core > i { filter: none; }
 body.perf-lite .orb-glow { filter: none; animation: none; }
-[data-moving] .orb-core > i, [data-moving] .orb-glow { animation-play-state: paused !important; }
 
 /* ==========================================================================
    Minimal visuals (Profile > Settings > Appearance > Evolve visuals). Sets body.perf-lite; the glass rules that must out-rank
@@ -1459,9 +1456,6 @@ body.perf-lite .cal-pane-prev { animation-name: cal-pane-prev-lite; }
 .sb.glass {
   transition: width var(--sb-dur) var(--sb-ease), box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
-/* while the panel is moving, the always-on background loops rest so the resize gets every frame */
-html[data-sb-moving] [class*='scene-'], html[data-sb-moving] .glass-live::after, html[data-sb-moving] .wall-zoom,
-html[data-sb-moving] .ambient > i { animation-play-state: paused !important; }
 
 /* cards beyond the fourth used to appear all at once */
 .card:nth-child(5) { animation-delay: 0.32s; }
@@ -1632,13 +1626,9 @@ button, [role='button'], nav, .glass { -webkit-user-select: none; user-select: n
 
 
 /* ==========================================================================
-   Smooth resize (phones). Nothing here changes how anything looks at rest.
-   While a card or the sidebar is changing height (<html data-motion>, see lib/motion.ts) the always-on loops rest
-   for the half second it takes, so the blur behind the glass is not recomputed against moving pictures every frame.
+   Smooth resize. Nothing pauses while a card or the sidebar resizes: every loop keeps playing.
    ========================================================================== */
 /* (the wallpaper itself - video, live scene, zoom, ambient light - deliberately keeps playing) */
-html[data-motion] .glass-live::after,
-html[data-motion] .orb-core > i, html[data-motion] .orb-glow, html[data-motion] .pet, html[data-motion] .pet * { animation-play-state: paused !important; }
 
 /* The live scene is its own island: resizing the hero never re-lays-out or re-paints anything outside it, and vice versa. */
 .scene { contain: layout paint style; }
@@ -1758,3 +1748,19 @@ html[data-visuals='minimal'] .card, html[data-visuals='minimal'] .fade-up { anim
 .profile-visuals b { font-size: 0.78rem; font-weight: 600; }
 .profile-visuals span { font-size: 0.68rem; line-height: 1.5; color: rgba(237, 247, 248, 0.5); }
 @media (max-width: 767px) { .profile-visuals { grid-template-columns: minmax(0, 1fr); } .profile-visuals button { min-height: 44px; } }
+
+
+/* ==========================================================================
+   Home hero (progress ring card) live scene: static in Moderate and Minimal visuals.
+   Its twinkling, drifting and parallax animation was repainted under the glass every frame while the
+   Today's focus card expanded, which lagged on phones. Extended visuals keep it fully animated.
+   ========================================================================== */
+html[data-visuals='moderate'] .scene-hero *, html[data-visuals='moderate'] .scene-hero *::before, html[data-visuals='moderate'] .scene-hero *::after,
+html[data-visuals='minimal'] .scene-hero *, html[data-visuals='minimal'] .scene-hero *::before, html[data-visuals='minimal'] .scene-hero *::after {
+  animation: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+html[data-visuals='moderate'] .scene-hero .scene-par, html[data-visuals='minimal'] .scene-hero .scene-par { transform: none !important; }
+html[data-visuals='moderate'] .scene-hero .scene-shoot, html[data-visuals='minimal'] .scene-hero .scene-shoot,
+html[data-visuals='moderate'] .scene-hero .scene-fly, html[data-visuals='minimal'] .scene-hero .scene-fly { display: none; }
