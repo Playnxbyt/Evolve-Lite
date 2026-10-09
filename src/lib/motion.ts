@@ -8,6 +8,7 @@ const active = new Set<string>()
 
 export function setMotion(source: string, moving: boolean) {
   if (typeof document === 'undefined') return
+  if (moving && document.documentElement.dataset.visuals === 'extended') return // Extended visuals: loops keep running
   if (moving) active.add(source); else active.delete(source)
   document.documentElement.toggleAttribute('data-motion', active.size > 0)
 }

@@ -4,6 +4,8 @@ export type ThemeMode = 'midnight' | 'obsidian' | 'soft'
 export type Accent = 'teal' | 'blue' | 'violet' | 'amber'
 export type Density = 'comfortable' | 'compact'
 export type DateFormat = 'regional' | 'iso'
+/** Evolve visuals: how much the interface is allowed to render. Purely visual; no feature depends on it. */
+export type Visuals = 'extended' | 'moderate' | 'minimal'
 
 export interface AppPreferences {
   birthDate: string
@@ -17,7 +19,7 @@ export interface AppPreferences {
   accent: Accent
   density: Density
   backgroundEffects: boolean
-  minimalEffects: boolean
+  visuals: Visuals
   sound: boolean
   haptics: boolean
   timeFormat: '12h' | '24h'
@@ -37,7 +39,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   accent: 'teal',
   density: 'comfortable',
   backgroundEffects: true,
-  minimalEffects: false,
+  visuals: 'extended',
   sound: false,
   haptics: true,
   timeFormat: '12h',
@@ -47,17 +49,30 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
 
 const KEY = 'evolvePreferences'
 
+/** Phones and tablets start on Moderate (a smooth, still-glassy look); laptops and desktops start on Extended. */
+export function defaultVisuals(): Visuals {
+  try {
+    const touch = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 1023px)').matches)
+    return touch ? 'moderate' : 'extended'
+  } catch { return 'extended' }
+}
+
+function readVisuals(p: Partial<AppPreferences> & { minimalEffects?: unknown }): Visuals {
+  if (p.visuals === 'extended' || p.visuals === 'moderate' || p.visuals === 'minimal') return p.visuals
+  return p.minimalEffects === true ? 'minimal' : defaultVisuals() // older saves only knew "Minimal effects"
+}
+
 export function loadPreferences(): AppPreferences {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<AppPreferences> | null
-    if (!p) return DEFAULT_PREFERENCES
+    if (!p) return { ...DEFAULT_PREFERENCES, visuals: defaultVisuals() }
     return {
       ...DEFAULT_PREFERENCES,
       ...p,
       birthDate: typeof p.birthDate === 'string' ? p.birthDate : '',
       bio: typeof p.bio === 'string' ? p.bio.slice(0, 240) : '',
       avatar: typeof p.avatar === 'string' ? p.avatar : null,
-      minimalEffects: p.minimalEffects === true,
+      visuals: readVisuals(p),
       theme: p.theme === 'obsidian' || p.theme === 'soft' ? p.theme : 'midnight',
       accent: p.accent === 'blue' || p.accent === 'violet' || p.accent === 'amber' ? p.accent : 'teal',
       density: p.density === 'compact' ? 'compact' : 'comfortable',
@@ -66,7 +81,7 @@ export function loadPreferences(): AppPreferences {
       startOfWeek: p.startOfWeek === 'sunday' ? 'sunday' : 'monday',
     }
   } catch {
-    return DEFAULT_PREFERENCES
+    return { ...DEFAULT_PREFERENCES, visuals: defaultVisuals() }
   }
 }
 
@@ -78,7 +93,7 @@ export function usePreferences() {
   const [prefs, setPrefs] = useState<AppPreferences>(loadPreferences)
   useEffect(() => { savePreferences(prefs) }, [prefs])
   const update = useCallback((patch: Partial<AppPreferences>) => setPrefs(cur => ({ ...cur, ...patch })), [])
-  const reset = useCallback(() => setPrefs(DEFAULT_PREFERENCES), [])
+  const reset = useCallback(() => setPrefs({ ...DEFAULT_PREFERENCES, visuals: defaultVisuals() }), [])
   return { prefs, update, reset }
 }
 

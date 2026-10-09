@@ -1419,8 +1419,8 @@ body.perf-lite .orb-glow { filter: none; animation: none; }
 [data-moving] .orb-core > i, [data-moving] .orb-glow { animation-play-state: paused !important; }
 
 /* ==========================================================================
-   Minimal effects (Profile > Settings > Appearance). Off by default, so nothing above changes.
-   When on: no live backdrop blur on cards and a still background, which keeps scrolling smooth on phones.
+   Minimal visuals (Profile > Settings > Appearance > Evolve visuals). Sets body.perf-lite; the glass rules that must out-rank
+   the phone tier live in the "Evolve visuals" block at the very end of this file.
    ========================================================================== */
 body.perf-lite .glass,
 html[data-refract] body.perf-lite .glass,
@@ -1659,3 +1659,102 @@ html[data-motion] .orb-core > i, html[data-motion] .orb-glow, html[data-motion] 
     backdrop-filter: blur(6px) saturate(190%) brightness(1.08);
   }
 }
+
+
+/* ==========================================================================
+   Evolve visuals (Profile > Settings > Appearance). <html data-visuals="extended | moderate | minimal">
+   Kept last on purpose: these rules have to out-rank the phone tier above (the old Minimal rules were being
+   overridden on phones by `html[data-device='touch'] .glass`, so the blur never actually went away there).
+   Visual only. No rule here touches layout, behaviour or data, so every feature works the same in all three.
+   ========================================================================== */
+
+/* ── Extended: no restrictions. Phones get the full-strength, untinted liquid glass and every loop keeps playing. ── */
+html[data-visuals='extended'][data-device='touch'] .glass {
+  -webkit-backdrop-filter: blur(10px) saturate(190%) brightness(1.08);
+  backdrop-filter: blur(10px) saturate(190%) brightness(1.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13),
+    inset 1.5px 2px 3px -1px rgba(255, 255, 255, 0.6),
+    inset -2px -2.5px 4px -2px rgba(255, 255, 255, 0.32),
+    inset 0 0 24px rgba(255, 255, 255, 0.06),
+    0 22px 44px -18px rgba(0, 0, 0, 0.6);
+}
+html[data-visuals='extended'][data-device='touch'] .hb-cards .glass:not(.hb-menu) {
+  -webkit-backdrop-filter: blur(var(--hb-frost, 22px)) saturate(170%);
+  backdrop-filter: blur(var(--hb-frost, 22px)) saturate(170%);
+}
+/* the bottom bar loses its dark tint and uses the same clear glass as the cards */
+html[data-visuals='extended'][data-device='touch'] nav.glass.fixed {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.025) 50%, rgba(255, 255, 255, 0.06));
+  -webkit-backdrop-filter: blur(10px) saturate(190%) brightness(1.08);
+  backdrop-filter: blur(10px) saturate(190%) brightness(1.08);
+}
+html[data-visuals='extended'] .glass-live::after { animation: sheen 10s ease-in-out infinite; opacity: 1; }
+html[data-visuals='extended'] .ambient > i:nth-child(3) { display: block; }
+
+/* ── Moderate: lightly tinted glass, no SVG refraction, cheaper blur, and the paint-heavy loops swapped for light ones. ── */
+html[data-visuals='moderate'] .glass,
+html[data-visuals='moderate'][data-refract] .glass {
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  backdrop-filter: blur(8px) saturate(150%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 1px 2px rgba(255, 255, 255, 0.35),
+    0 12px 28px -10px rgba(0, 0, 0, 0.55);
+}
+html[data-visuals='moderate'] .glass:not(.hb-menu):not(.pop-in):not(.fixed) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.025) 50%, rgba(255, 255, 255, 0.06)),
+    rgba(10, 20, 28, 0.3);
+}
+html[data-visuals='moderate'] .hb-cards .glass:not(.hb-menu),
+html[data-visuals='moderate'][data-refract] .hb-cards .glass:not(.hb-menu) {
+  -webkit-backdrop-filter: blur(min(var(--hb-frost, 10px), 12px)) saturate(150%);
+  backdrop-filter: blur(min(var(--hb-frost, 10px), 12px)) saturate(150%);
+}
+html[data-visuals='moderate'] .hb-menu, html[data-visuals='moderate'] .pop-in.glass { background-color: rgba(10, 20, 28, 0.8); }
+html[data-visuals='moderate'] .glass-live::after { animation: none; opacity: 0; }   /* the sheen repaints the whole card every frame */
+html[data-visuals='moderate'] .ambient > i:nth-child(3) { display: none; }
+html[data-visuals='moderate'] .scene-shoot { display: none; }
+/* the calendar ring pulsed a box-shadow (a repaint per frame); it now pulses opacity, which is free */
+@keyframes cal-breathe-lite { 50% { opacity: 0.6; } }
+html[data-visuals='moderate'] .cal-ring { animation-name: cal-breathe-lite; }
+html[data-visuals='moderate'] .an-rise { animation-name: an-rise-lite; }
+html[data-visuals='moderate'] .cal-pane-next { animation-name: cal-pane-next-lite; }
+html[data-visuals='moderate'] .cal-pane-prev { animation-name: cal-pane-prev-lite; }
+
+/* ── Minimal: the smoothest tier. Keeps the glass look (rim, highlight, soft tint) without any live blur or decorative loops. ── */
+html[data-visuals='minimal'] .glass,
+html[data-visuals='minimal'][data-refract] .glass,
+html[data-visuals='minimal'] .hb-cards .glass:not(.hb-menu),
+html[data-visuals='minimal'][data-refract] .hb-cards .glass:not(.hb-menu) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.025) 50%, rgba(255, 255, 255, 0.06)),
+    rgba(10, 20, 28, 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13),
+    inset 1.5px 2px 3px -1px rgba(255, 255, 255, 0.45),
+    0 10px 22px -14px rgba(0, 0, 0, 0.6);
+  transform: none;
+}
+html[data-visuals='minimal'] nav.glass.fixed { background-color: rgba(8, 18, 26, 0.82); }
+html[data-visuals='minimal'] .hb-menu, html[data-visuals='minimal'] .pop-in.glass { background-color: rgba(10, 20, 28, 0.9); }
+html[data-visuals='minimal'] .glass-live::after { animation: none; opacity: 0; }
+html[data-visuals='minimal'] .wall-zoom, html[data-visuals='minimal'] .pet-body { animation: none; }
+html[data-visuals='minimal'] .card, html[data-visuals='minimal'] .fade-up { animation-duration: 0.24s; }
+
+/* Evolve visuals picker (Profile > Settings > Appearance): three full-width choices, stacked on phones */
+.profile-visuals-row { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.profile-visuals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.profile-visuals button { display: flex; flex-direction: column; gap: 0.3rem; text-align: left; padding: 0.8rem 0.9rem; border-radius: 0.85rem; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); opacity: 0.7; transition: opacity 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease; }
+.profile-visuals button:hover { opacity: 1; }
+.profile-visuals button.is-active { opacity: 1; background: rgba(100, 232, 211, 0.08); box-shadow: inset 0 0 0 1.5px var(--color-teal), 0 0 0 3px rgba(100, 232, 211, 0.14); }
+.profile-visuals b { font-size: 0.78rem; font-weight: 600; }
+.profile-visuals span { font-size: 0.68rem; line-height: 1.5; color: rgba(237, 247, 248, 0.5); }
+@media (max-width: 767px) { .profile-visuals { grid-template-columns: minmax(0, 1fr); } .profile-visuals button { min-height: 44px; } }

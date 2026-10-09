@@ -29,6 +29,7 @@ export function initDevice() {
   // so GPU-intensive ambient animations pause and the compositor stays at 60/120fps.
   let scrollTimer = 0
   const onScroll = () => {
+    if (root.dataset.visuals === 'extended') return // Extended visuals: nothing ever rests
     if (!root.hasAttribute('data-scrolling')) {
       root.setAttribute('data-scrolling', 'true')
     }

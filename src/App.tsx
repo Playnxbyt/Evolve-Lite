@@ -107,8 +107,11 @@ export default function App() {
     root.dataset.accent = prefs.accent
     root.dataset.density = prefs.density
     document.body.classList.toggle('effects-off', !prefs.backgroundEffects)
-    document.body.classList.toggle('perf-lite', prefs.minimalEffects)
-  }, [prefs.theme, prefs.accent, prefs.density, prefs.backgroundEffects, prefs.minimalEffects])
+    // Evolve visuals: <html data-visuals> drives the CSS tiers; body.perf-lite is the Minimal tier's hook for older rules.
+    root.dataset.visuals = prefs.visuals
+    document.body.classList.toggle('perf-lite', prefs.visuals === 'minimal')
+    if (prefs.visuals === 'extended') root.removeAttribute('data-scrolling')
+  }, [prefs.theme, prefs.accent, prefs.density, prefs.backgroundEffects, prefs.visuals])
 
   // Pause every looping animation while the app is in the background (saves battery on phones).
   useEffect(() => {

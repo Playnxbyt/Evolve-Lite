@@ -2,7 +2,7 @@ import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { streak, type AppState } from '../lib/core'
 import { badgeSrc, stageInfo } from '../lib/evolution'
 import { DEFAULT_WALL, DEFAULT_WALLPAPER, SOFT_WALL, WALL_LIMITS, type SceneSettings, type Wallpaper } from '../lib/wallpaper'
-import { calculateAge, type AppPreferences, type Accent, type Density, type ThemeMode } from '../lib/preferences'
+import { calculateAge, type AppPreferences, type Accent, type Density, type ThemeMode, type Visuals } from '../lib/preferences'
 import { Icon } from './Icons'
 import LiveScene, { THEMES } from './LiveScene'
 import DatePicker from './DatePicker'
@@ -70,6 +70,12 @@ function Segmented<T extends string>({ value, options, onChange, label }: { valu
     </div>
   )
 }
+
+const visualsOptions: { id: Visuals; label: string; note: string }[] = [
+  { id: 'extended', label: 'Evolve Extended Visuals', note: 'Maximum visual appeal. Every animation and effect, with clear, untinted liquid glass everywhere.' },
+  { id: 'moderate', label: 'Moderate visuals', note: 'Lightly tinted glass and cheaper effects where they cause lag. Still looks premium.' },
+  { id: 'minimal', label: 'Minimal visuals', note: 'The smoothest experience: keeps the core look and drops unnecessary animation and live blur.' },
+]
 
 function Upload({ slot, accept, noun, note }: { slot: MediaSlot; accept: string; noun: string; note: string }) {
   const input = useRef<HTMLInputElement>(null)
@@ -301,7 +307,22 @@ export default function Profile({ name, state, prefs, onPrefs, onResetPrefs, onS
           </SettingRow>
           <SettingRow icon="evolution" title="Interface density" description="Choose how much breathing room the application uses. This affects the whole app."><Segmented value={prefs.density} onChange={v => onPrefs({ density: v as Density })} options={[{ id: 'comfortable', label: 'Comfortable' }, { id: 'compact', label: 'Compact' }]} label="Interface density" /></SettingRow>
           <SettingRow icon="image" title="Background effects" description="Keep EVOLVE's ambient motion and atmospheric background effects on or off."><Toggle checked={prefs.backgroundEffects} onChange={() => onPrefs({ backgroundEffects: !prefs.backgroundEffects })} label="Background effects" /></SettingRow>
-          <SettingRow icon="evolution" title="Minimal effects" description="For a smoother feel on phones: removes the live blur behind cards and keeps the background still. Everything else stays the same."><Toggle checked={prefs.minimalEffects} onChange={() => onPrefs({ minimalEffects: !prefs.minimalEffects })} label="Minimal effects" /></SettingRow>
+          <div className="profile-setting-row profile-visuals-row">
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="profile-setting-icon"><Icon name="evolution" className="size-[17px]" /></span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Evolve visuals</p>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-ink/50">Choose how much EVOLVE renders. This only changes how the app looks and moves; every feature works exactly the same in all three.</p>
+              </div>
+            </div>
+            <div role="radiogroup" aria-label="Evolve visuals" className="profile-visuals">
+              {visualsOptions.map(o => (
+                <button key={o.id} type="button" role="radio" aria-checked={prefs.visuals === o.id} onClick={() => onPrefs({ visuals: o.id })} className={prefs.visuals === o.id ? 'is-active' : ''}>
+                  <b>{o.label}</b><span>{o.note}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="profile-settings-group">

@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, type CSSProperties } from 'react'
 import { isTouchDevice } from '../lib/device'
+import { useShell } from '../lib/shell'
 
 export const THEMES = [
   { id: 'dusk', label: 'Dusk', v: { '--sky1': '#050b18', '--sky2': '#15283f', '--sky3': '#6a4d4a', '--glow': '91,210,191', '--aur1': '61,220,151', '--aur2': '59,140,255', '--m-far': '#1b3441', '--m-mid': '#0d202b', '--m-near': '#040b10', '--lit': '#d3dedc' } },
@@ -73,7 +74,8 @@ export default function LiveScene({ theme, lite = false, track = false }: { them
   }, [track])
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const t = THEMES.find(x => x.id === theme) ?? THEMES[0]
-  const isTouch = isTouchDevice()
+  const extended = useShell()?.prefs.visuals === 'extended'
+  const isTouch = isTouchDevice() && !extended
   const art = useMemo(() => {
     const r = rng(7)
     const starCount = isTouch ? 28 : 70

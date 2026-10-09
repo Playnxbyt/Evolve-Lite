@@ -69,8 +69,8 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
   const [now, setNow] = useState(() => new Date())
   const { clock: clockPrefs, ring, setClock, setRing, resetClock, resetRing } = useHeroPrefs()
   const [stored, setStored] = useState<Session | null>(() => read<Session | null>(FOCUS_KEY, null))
-  // In minimal-effects mode the page only re-renders every second when seconds or a focus countdown are on screen.
-  const minimal = !!useShell()?.prefs.minimalEffects
+  // In Minimal visuals the page only re-renders every second when seconds or a focus countdown are on screen.
+  const minimal = useShell()?.prefs.visuals === 'minimal'
   // The clock ticks on its own (<LiveClock>), so the whole page only needs a 1s heartbeat while a focus countdown runs.
   // On phones that is the only time it ticks every second; otherwise every 15s keeps the dial and lists fresh.
   const lazyTick = minimal || isTouchDevice()
