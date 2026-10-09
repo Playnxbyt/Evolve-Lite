@@ -84,7 +84,7 @@ export default function QuickActions({ state, tab, onAdd, onToggle, onNavigate }
 
   return (
     <>
-      <div className="fixed bottom-20 right-4 z-30 lg:bottom-8 lg:right-8">
+      <div className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-4 z-30 lg:bottom-8 lg:right-8">
         {fab && <button aria-label="Close actions" tabIndex={-1} className="fixed inset-0 -z-10 cursor-default" onClick={() => setFab(false)} />}
         <ul className="pointer-events-none absolute bottom-16 right-0 flex flex-col items-end gap-2">
           {actions.map((a, i) => (

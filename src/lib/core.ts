@@ -237,7 +237,13 @@ export function loadState(): AppState {
     return {
       tasks: (Array.isArray(p.tasks) ? p.tasks : []).map(parseTask),
       completions: p.completions && typeof p.completions === 'object' ? p.completions : {},
-      xp: Number(p.xp) || 0,
+      // XP is derived from the saved check-in history, not trusted as a separate counter.
+      // This repairs stale/corrupt XP totals that could show an unexpectedly high rank
+      // after reload or an app-version change, without discarding any recorded check-ins.
+      xp: Object.values(p.completions && typeof p.completions === 'object' ? p.completions : {})
+        .reduce((total: number, day: any) => total + (day && typeof day === 'object'
+          ? Object.values(day).filter(Boolean).length
+          : 0), 0) * XP_PER_TASK,
       badges: Array.isArray(p.badges) ? p.badges : [],
       moodLog: p.moodLog && typeof p.moodLog === 'object' ? p.moodLog : {},
       name: typeof p.name === 'string' ? p.name.slice(0, 40) : '',
