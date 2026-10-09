@@ -20,13 +20,21 @@ export default function SmoothHeight({ children, onMotion, className }: { childr
     if (!el || !body || typeof ResizeObserver === 'undefined') return
     last.current = body.getBoundingClientRect().height
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const minimal = document.documentElement.dataset.visuals === 'minimal' || document.body.classList.contains('perf-lite')
 
     const ro = new ResizeObserver(() => {
       const to = body.getBoundingClientRect().height
       // Where the box is right now (it may be halfway through an earlier glide), so a quick second change continues smoothly.
       const from = anim.current ? el.getBoundingClientRect().height : last.current
       last.current = to
-      if (reduced.matches || Math.abs(to - from) < 3 || !el.animate) return
+      if (minimal || reduced.matches || Math.abs(to - from) < 3 || !el.animate) {
+        // Avoid per-frame height/layout work on lower-powered phones in Minimal visuals.
+        anim.current?.cancel()
+        el.style.height = ''
+        el.style.overflow = ''
+        motion.current?.(false)
+        return
+      }
       anim.current?.cancel()
       el.style.overflow = 'hidden'
       motion.current?.(true)

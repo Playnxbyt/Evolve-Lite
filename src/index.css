@@ -1764,3 +1764,27 @@ html[data-visuals='minimal'] .scene-hero *, html[data-visuals='minimal'] .scene-
 html[data-visuals='moderate'] .scene-hero .scene-par, html[data-visuals='minimal'] .scene-hero .scene-par { transform: none !important; }
 html[data-visuals='moderate'] .scene-hero .scene-shoot, html[data-visuals='minimal'] .scene-hero .scene-shoot,
 html[data-visuals='moderate'] .scene-hero .scene-fly, html[data-visuals='minimal'] .scene-hero .scene-fly { display: none; }
+
+
+/* Minimal visuals: keep the Today's focus disclosure responsive on mobile.
+   Height animations trigger repeated layout and repaint the large hero backdrop. */
+html[data-visuals='minimal'] .hero-glass {
+  contain: layout style;
+  box-shadow: 0 10px 24px -16px rgba(0,0,0,.55);
+}
+html[data-visuals='minimal'] .hero-glass .glass,
+html[data-visuals='minimal'] .hero-glass .glass-live {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+}
+html[data-visuals='minimal'] .hero-glass .swap,
+html[data-visuals='minimal'] .hero-glass .fl-item,
+html[data-visuals='minimal'] .hero-glass button {
+  animation: none !important;
+  scroll-behavior: auto;
+}
+@media (max-width: 767px) {
+  html[data-visuals='minimal'] .hero-glass { box-shadow: none; }
+  html[data-visuals='minimal'] .hero-glass .glass-live { background-color: rgba(10,20,28,.72); }
+}
