@@ -1788,3 +1788,16 @@ html[data-visuals='minimal'] .hero-glass button {
   html[data-visuals='minimal'] .hero-glass { box-shadow: none; }
   html[data-visuals='minimal'] .hero-glass .glass-live { background-color: rgba(10,20,28,.72); }
 }
+
+
+/* Minimal mobile video-wallpaper path: keep the wallpaper blur (capped in the
+   Backdrop component) while avoiding unnecessary animation/compositing work. */
+html[data-visuals='minimal'] .wall-blur {
+  animation: none !important;
+  will-change: auto;
+}
+html[data-visuals='minimal'] .hero-glass > video {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+html[data-visuals='minimal'] { scroll-behavior: auto; }

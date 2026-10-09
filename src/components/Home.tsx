@@ -274,7 +274,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
         className="hero-glass fade-up relative isolate overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/50" style={delay(0)}>
         {wall ? (
           wall.kind === 'video'
-            ? <video src={wall.url} autoPlay muted loop playsInline aria-hidden="true" className="absolute inset-0 size-full object-cover" />
+            ? <video src={wall.url} autoPlay muted loop playsInline aria-hidden="true" className="absolute inset-0 size-full object-cover" preload={minimal ? 'metadata' : 'auto'} />
             : <img src={wall.url} alt="" className="wall-zoom absolute inset-0 size-full object-cover" />
         ) : <LiveScene theme={scene.theme} hero />}
         <div aria-hidden="true" className="absolute inset-0" style={{ backgroundColor: `rgba(3, 9, 14, ${scene.dim})` }} />

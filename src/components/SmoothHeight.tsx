@@ -20,7 +20,7 @@ export default function SmoothHeight({ children, onMotion, className }: { childr
     if (!el || !body || typeof ResizeObserver === 'undefined') return
     last.current = body.getBoundingClientRect().height
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const minimal = document.documentElement.dataset.visuals === 'minimal' || document.body.classList.contains('perf-lite')
+    const minimal = document.documentElement.dataset.visuals === 'minimal'
 
     const ro = new ResizeObserver(() => {
       const to = body.getBoundingClientRect().height

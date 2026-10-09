@@ -41,6 +41,7 @@ export function initDevice() {
   window.addEventListener('scroll', onScroll, { passive: true })
 }
 
+
 /** True on phones and tablets (re-evaluates when the window crosses the breakpoint). */
 export function useIsTouch() {
   const [v, setV] = useState(isTouchDevice)

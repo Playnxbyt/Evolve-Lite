@@ -32,7 +32,7 @@ export default function Collapse({ open, id, children, onMotion }: Props) {
     const rest = open ? 'auto' : '0px'
     // Minimal visuals prioritizes frame stability on mobile: animating height forces layout on every frame.
     // Keep the same disclosure behaviour, but commit its final height immediately in this mode.
-    const minimal = document.documentElement.dataset.visuals === 'minimal' || document.body.classList.contains('perf-lite')
+    const minimal = document.documentElement.dataset.visuals === 'minimal'
     const still = minimal || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof el.animate !== 'function' || Math.abs(from - to) < 1
     el.style.height = `${to}px`
     if (still) { el.style.height = rest; onMotion?.(false); return }
