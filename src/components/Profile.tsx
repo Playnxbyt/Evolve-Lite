@@ -1,3 +1,4 @@
+import { clearAllPhotos } from '../lib/photos'
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { streak, type AppState } from '../lib/core'
 import { badgeSrc, stageInfo } from '../lib/evolution'
@@ -199,6 +200,7 @@ export default function Profile({ name, state, prefs, onPrefs, onResetPrefs, onS
   const resetEverything = async () => {
     try {
       await appMedia.clear()
+      await clearAllPhotos()
       localStorage.clear()
     } catch { /* continue with reload */ }
     onResetApp()

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import {
-  PRIORITY_RANK, catById, dayKey, dayPct, habitStreak, insight, streak, tasksOn, weekDots,
+  PRIORITY_RANK, catById, dayKey, dayPct, earliestWeekOffset, habitStreak, insight, streak, tasksOn, weekAverage, weekDots, weekStartOf,
   type AppState, type HabitFields, type Task,
 } from '../lib/core'
 import { Icon } from './Icons'
@@ -17,6 +17,7 @@ import type { SceneSettings, Wallpaper } from '../lib/wallpaper'
 import { DEFAULT_RING_LABEL, useHeroPrefs } from '../lib/heroPrefs'
 import { FOCUS_EVENT, NOTES_EVENT, QUICK_EVENT, focusRequest } from './QuickActions'
 import Switch from './Switch'
+import WeekNav, { SlideText, useWeekNav, weekRangeLabel } from './WeekNav'
 import TopBar from './TopBar'
 import type { Tab } from './Sidebar'
 
@@ -198,18 +199,22 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
   // Momentum and the one insight, both computed from real completions.
   // These look back over 4 weeks of days, so they are computed once per change to your data (or a new day), not on every tick or re-render.
   const today = dayKey(now)
+  const nav = useWeekNav(earliestWeekOffset(state, now))
+  const off = nav.offset
   const { week, days, cur, delta, insightText } = useMemo(() => {
-    const week = weekDots(state, now)
+    const week = weekDots(state, now, off)
     const days = streak(state)
-    const avg = (off: number) => {
+    const avg = (back: number) => {
       let sum = 0, n = 0
-      for (let i = off; i < off + 7; i++) {
+      for (let i = back; i < back + 7; i++) {
         const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
         if (tasksOn(state, d).length) { sum += dayPct(state, d); n++ }
       }
       return n ? sum / n : null
     }
-    const cur = avg(0), prev = avg(7)
+    // This week keeps its rolling 7-day comparison; any other week is compared with the calendar week before it.
+    const cur = off === 0 ? avg(0) : weekAverage(state, now, off)
+    const prev = off === 0 ? avg(7) : weekAverage(state, now, off - 1)
     const delta = cur !== null && prev !== null ? Math.round(cur - prev) : null
     const byDay = DAYS.map(() => ({ s: 0, n: 0 }))
     for (let i = 0; i < 28; i++) {
@@ -220,7 +225,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
     const insightText = best.v >= 50 ? `Your strongest day lately is ${DAYS[best.k]}, averaging ${Math.round(best.v)}% completion.` : insight(state, now)
     return { week, days, cur, delta, insightText }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, today])
+  }, [state, today, off])
 
   const hour = now.getHours()
   const statement = !tasks.length ? 'Nothing scheduled yet today.'
@@ -508,6 +513,8 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
               <h2 className={`${eyebrow} text-ink/70`}>Weekly momentum</h2>
               <span className="flex items-center gap-1 text-xs text-ink/65"><Icon name="flame" className="size-3.5 text-orange-400" />{days} day streak</span>
             </div>
+            <WeekNav className="mb-4" offset={off} dir={nav.dir} label={weekRangeLabel(weekStartOf(now, off))}
+              canPrev={nav.canPrev} canNext={nav.canNext} onPrev={nav.prev} onNext={nav.next} onReset={nav.reset} />
             <div className="grid grid-cols-7 gap-1.5 text-center">
               {week.map((d, i) => {
                 const fill = d.future || !d.hasTasks ? 0 : d.pct > 0 ? Math.max(d.pct, 12) : 0
@@ -516,7 +523,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
                     <div title={d.future || !d.hasTasks ? '' : `${d.pct}%`}
                       className={`relative h-20 w-full max-w-7 overflow-hidden rounded-full bg-white/[0.07] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)] ${d.isToday ? 'ring-1 ring-teal/60 ring-offset-2 ring-offset-transparent' : ''} ${d.future || !d.hasTasks ? 'border border-dashed border-white/15' : ''}`}>
                       <span className="bar-grow bar-fill absolute inset-x-0 bottom-0 rounded-full bg-gradient-to-t from-mint to-blue"
-                        style={{ height: `${fill}%`, ['--i' as string]: i, boxShadow: d.pct === 100 && d.hasTasks ? '0 0 14px rgba(61,220,151,0.6)' : '0 0 0 rgba(61,220,151,0)' }} />
+                        style={{ height: `${fill}%`, transitionDelay: `${i * 45}ms`, ['--i' as string]: i, boxShadow: d.pct === 100 && d.hasTasks ? '0 0 14px rgba(61,220,151,0.6)' : '0 0 0 rgba(61,220,151,0)' }} />
                     </div>
                     <span className={`text-[11px] ${d.isToday ? 'text-ink' : 'text-ink/55'}`}>{d.label}</span>
                   </div>
@@ -524,8 +531,13 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
               })}
             </div>
             {(delta !== null || cur !== null) && (
-              <p className="mt-3 text-xs text-ink/60">{delta !== null ? `${delta > 0 ? '+' : ''}${delta}% vs last week` : `${Math.round(cur!)}% average this week`}</p>
+              <p className="mt-3 text-xs text-ink/60">
+                <SlideText dir={nav.dir} text={off === 0
+                  ? (delta !== null ? `${delta > 0 ? '+' : ''}${delta}% vs last week` : `${Math.round(cur!)}% average this week`)
+                  : `${Math.round(cur ?? 0)}% average${delta !== null ? ` · ${delta > 0 ? '+' : ''}${delta}% vs the week before` : ''}`} />
+              </p>
             )}
+            {cur === null && off !== 0 && <p className="mt-3 text-xs text-ink/60">Nothing was scheduled this week.</p>}
             <p className="mt-4 flex gap-2.5 border-t border-white/10 pt-4 text-sm leading-relaxed text-ink/75">
               <Icon name="bulb" className="mt-0.5 size-4 shrink-0 text-lifestyle" />{insightText}
             </p>

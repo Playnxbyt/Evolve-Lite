@@ -1801,3 +1801,35 @@ html[data-visuals='minimal'] .hero-glass > video {
   backface-visibility: hidden;
 }
 html[data-visuals='minimal'] { scroll-behavior: auto; }
+
+/* Week navigation (Home "Weekly momentum", Habits "This week"): content glides the way you are travelling, bars morph in place */
+.wk-stack { display: inline-grid; }
+.wk-stack > * { grid-area: 1 / 1; white-space: nowrap; }
+.wk-label { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+.wk-in-next  { animation: wk-in-next 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.wk-in-prev  { animation: wk-in-prev 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.wk-out-next { animation: wk-out-next 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.wk-out-prev { animation: wk-out-prev 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes wk-in-next  { from { opacity: 0; transform: translateX(22px);  filter: blur(5px); } }
+@keyframes wk-in-prev  { from { opacity: 0; transform: translateX(-22px); filter: blur(5px); } }
+@keyframes wk-out-next { to { opacity: 0; transform: translateX(-22px); filter: blur(5px); } }
+@keyframes wk-out-prev { to { opacity: 0; transform: translateX(22px);  filter: blur(5px); } }
+/* a whole card body (Habits) arrives as one soft slide */
+.wk-body-next { animation: wk-body-next 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.wk-body-prev { animation: wk-body-prev 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+@keyframes wk-body-next { from { opacity: 0; transform: translateX(26px);  filter: blur(6px); } }
+@keyframes wk-body-prev { from { opacity: 0; transform: translateX(-26px); filter: blur(6px); } }
+.wk-fill { animation: wk-fill 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards; }
+@keyframes wk-fill { from { width: 0; } }
+.wk-reset { animation: wk-reset 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+@keyframes wk-reset { from { opacity: 0; transform: translateX(-8px) scale(0.92); } }
+@media (prefers-reduced-motion: reduce) {
+  .wk-in-next, .wk-in-prev, .wk-out-next, .wk-out-prev, .wk-body-next, .wk-body-prev, .wk-fill, .wk-reset { animation: none; }
+  .wk-out-next, .wk-out-prev { display: none; }
+}
+
+/* Photo notes: thumbnails and the full-screen viewer ease in */
+.ph-thumb { animation: ph-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+@keyframes ph-pop { from { opacity: 0; transform: scale(0.88); } }
+.ph-viewer { animation: fade-in 0.25s ease both; }
+@media (prefers-reduced-motion: reduce) { .ph-thumb, .ph-viewer { animation: none; } }

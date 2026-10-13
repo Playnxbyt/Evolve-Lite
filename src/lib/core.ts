@@ -14,6 +14,8 @@ export interface SpaceItem {
   content: string
   done: boolean
   days?: WeekDay[]
+  /** Ids of photos attached to an item (note, list or checklist). The pictures live in IndexedDB (see lib/photos.ts). */
+  photos?: string[]
   createdAt: number
   updatedAt: number
 }
@@ -180,6 +182,7 @@ function parseSpaceItem(i: any, index = 0): SpaceItem {
     content: String(i?.content ?? '').slice(0, 4000),
     done: Boolean(i?.done),
     days: rawDays.length ? Array.from(new Set(rawDays)) as WeekDay[] : undefined,
+    photos: Array.isArray(i?.photos) && i.photos.length ? i.photos.filter((x: unknown): x is string => typeof x === 'string').slice(0, 8) : undefined,
     createdAt: Number(i?.createdAt) || now,
     updatedAt: Number(i?.updatedAt) || now,
   }
@@ -326,10 +329,23 @@ export const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low
 
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 
-export function weekDots(s: AppState, now = new Date()) {
+/** Monday (or Sunday, per preference) of the week `offset` weeks away from the week containing `now`. */
+export function weekStartOf(now: Date, offset = 0) {
+  return addDays(now, -((now.getDay() - weekStartIndex() + 7) % 7) + offset * 7)
+}
+
+/** How many weeks back the data goes (a negative number, 0 when there is no history). Used to stop week navigation at the first week you used the app. */
+export function earliestWeekOffset(s: AppState, now = new Date()) {
+  const first = s.tasks.reduce((m, t) => Math.min(m, t.createdAt), Infinity)
+  if (!Number.isFinite(first)) return 0
+  const a = weekStartOf(new Date(first), 0).getTime()
+  const b = weekStartOf(now, 0).getTime()
+  return -Math.max(0, Math.round((b - a) / (7 * 86400000)))
+}
+
+export function weekDots(s: AppState, now = new Date(), offset = 0) {
   const today = startOfDay(now)
-  const start = weekStartIndex()
-  const weekStart = addDays(now, -((now.getDay() - start + 7) % 7))
+  const weekStart = weekStartOf(now, offset)
   return Array.from({ length: 7 }, (_, i) => {
     const d = addDays(weekStart, i)
     const future = d.getTime() > today
@@ -341,6 +357,20 @@ export function weekDots(s: AppState, now = new Date()) {
       future,
     }
   })
+}
+
+/** Average completion over the days of a calendar week that have habits and are not in the future. null when there is nothing to average. */
+export function weekAverage(s: AppState, now = new Date(), offset = 0) {
+  const today = startOfDay(now)
+  const weekStart = weekStartOf(now, offset)
+  let sum = 0, n = 0
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i)
+    if (d.getTime() > today || !tasksOn(s, d).length) continue
+    sum += dayPct(s, d)
+    n++
+  }
+  return n ? sum / n : null
 }
 
 export function weekdayBars(s: AppState, now = new Date()) {

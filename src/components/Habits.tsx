@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { CATS, PRIORITY_RANK, catById, habitDone, habitStreak, streak, tasksOn, type AppState, type HabitFields, type Task } from '../lib/core'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { CATS, PRIORITY_RANK, catById, earliestWeekOffset, habitDone, habitStreak, startOfDay, streak, tasksOn, type AppState, type HabitFields, type Task } from '../lib/core'
 import {
-  bestFullDayRun, bestRun, buildStat, daysOfMonth, daysOfWeek, isHabit, percent, strongestWeekday, sum,
+  addDays, bestFullDayRun, bestRun, buildStat, cellFor, daysOfMonth, daysOfWeek, isHabit, percent, strongestWeekday, sum, tally,
   type CellState, type HabitStat,
 } from '../lib/habitStats'
 import CategorySelect, { type CategoryOption } from './CategorySelect'
@@ -10,6 +10,7 @@ import { Icon } from './Icons'
 import LiveScene from './LiveScene'
 import { weekStartIndex } from '../lib/preferences'
 import TopBar from './TopBar'
+import WeekNav, { SlideText, useWeekNav, weekRangeLabel, weekRelative } from './WeekNav'
 
 interface Props {
   state: AppState
@@ -76,9 +77,16 @@ interface RowProps {
 function HabitRow({ h, open, ready, monthLead, onToggle, onOpen, onEdit, onRemove, best }: RowProps) {
   const c = catById(h.t.catId)
   const stat = 'text-lg font-light tabular-nums'
+  // Clicking anywhere on the habit opens or closes its details. Buttons (check, arrow, Edit, Delete) keep their own job,
+  // the opened details area never closes by accident, and selecting text with the mouse is not treated as a click.
+  const toggleFromRow = (e: MouseEvent<HTMLLIElement>) => {
+    if ((e.target as HTMLElement).closest('button, a, input, [data-no-toggle]')) return
+    if (window.getSelection()?.toString()) return
+    onOpen()
+  }
   return (
-    <li style={{ '--c': c.color } as CSSProperties}
-      className={`hb-row grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 px-5 py-3.5 transition-colors ${open ? 'bg-white/[0.03]' : ''} ${COLS}`}>
+    <li style={{ '--c': c.color } as CSSProperties} onClick={toggleFromRow}
+      className={`hb-row group cursor-pointer grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 px-5 py-3.5 transition-colors ${open ? 'bg-white/[0.03]' : 'hover:bg-white/[0.025]'} ${COLS}`}>
       <span className="sm:col-start-1 sm:row-start-1">
         <CheckButton checked={h.today === 'done'} disabled={h.today === 'rest'}
           label={h.today === 'rest' ? `${h.t.text} is not scheduled today` : `Mark ${h.t.text} done today`} onClick={onToggle} />
@@ -112,7 +120,7 @@ function HabitRow({ h, open, ready, monthLead, onToggle, onOpen, onEdit, onRemov
           </div>
         </div>
         <button type="button" aria-expanded={open} aria-label={`${open ? 'Hide' : 'Show'} details for ${h.t.text}`} onClick={onOpen}
-          className="grid size-9 shrink-0 place-items-center rounded-lg text-ink/55 transition-colors hover:bg-white/[0.06] hover:text-ink sm:col-start-5 sm:row-start-1">
+          className="grid size-9 shrink-0 place-items-center rounded-lg text-ink/55 transition-colors group-hover:text-ink/80 hover:bg-white/[0.06] hover:text-ink sm:col-start-5 sm:row-start-1">
           <Icon name="chevron" className={`size-4 transition-transform duration-300 ${open ? '-rotate-90' : 'rotate-90'}`} />
         </button>
       </div>
@@ -135,7 +143,7 @@ function HabitRow({ h, open, ready, monthLead, onToggle, onOpen, onEdit, onRemov
 
       <div className={`col-span-full grid transition-[grid-template-rows] duration-300 ease-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
         <div className="overflow-hidden">
-          <div className="flex flex-wrap items-start gap-x-10 gap-y-5 border-t border-white/10 pt-4 sm:pl-[3.25rem]">
+          <div data-no-toggle className="flex cursor-default flex-wrap items-start gap-x-10 gap-y-5 border-t border-white/10 pt-4 sm:pl-[3.25rem]">
             <div>
               <p className="mb-2 text-[11px] text-ink/50">{h.month[0].date.toLocaleDateString('en-US', { month: 'long' })} · {h.month.length} days</p>
               <div className="grid w-[15.5rem] grid-cols-7 gap-1" role="img" aria-label={`${h.m.done} of ${h.m.possible} check-ins this month`}>
@@ -181,6 +189,8 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
   const [filter, setFilter] = useState<Filter>('all')
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
+  const nav = useWeekNav(earliestWeekOffset(state, now))
+  const off = nav.offset
 
   const todayIdx = (now.getDay() - weekStartIndex() + 7) % 7
   const week = daysOfWeek(now)
@@ -205,9 +215,16 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
 
   const weekT = sum(scoped.map(h => h.w))
   const monthT = sum(scoped.map(h => h.m))
-  const weekPct = percent(weekT)
   const monthPct = percent(monthT)
-  const perDay = week.map((_, i) => sum(scoped.map(h => ({ done: +(h.week[i].state === 'done'), possible: +(h.week[i].state !== 'rest'), missed: +(h.week[i].state === 'missed') }))))
+
+  // The "This week" card can show any earlier week. Everything else on the page stays on the current week.
+  const viewWeek = daysOfWeek(addDays(now, off * 7))
+  const viewRows = scoped.map(h => { const cells = viewWeek.map(d => cellFor(state, h.t, d, now)); return { h, cells, w: tally(cells) } })
+  const viewT = sum(viewRows.map(r => r.w))
+  const viewPct = percent(viewT)
+  const perDay = viewWeek.map((_, i) => sum(viewRows.map(r => tally([r.cells[i]]))))
+  const viewToday = off === 0 ? todayIdx : -1
+  const isFuture = (d: Date) => startOfDay(d) > startOfDay(now)
 
   const overall = streak(state)
   const bestOverall = Math.max(overall, bestFullDayRun(state, now))
@@ -309,26 +326,27 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
           </section>
 
           <section className="glass fade-up rounded-2xl p-5 sm:p-6" style={delay(2)}>
-            <div className="mb-4 flex items-baseline justify-between">
-              <h2 className={`${eyebrow} text-ink/70`}>This week</h2>
-              <span className="text-xs text-ink/60">{shortDate(week[0])} – {shortDate(week[6])}</span>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <h2 className={`${eyebrow} text-ink/70`}><SlideText dir={nav.dir} text={weekRelative(off)} /></h2>
+              <WeekNav offset={off} dir={nav.dir} label={weekRangeLabel(viewWeek[0])}
+                canPrev={nav.canPrev} canNext={nav.canNext} onPrev={nav.prev} onNext={nav.next} onReset={nav.reset} />
             </div>
-            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:gap-8">
+            <div key={off} className={`grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:gap-8 wk-body-${nav.dir}`}>
               <div>
                 <p className="text-xs text-ink/60">Overall habit completion</p>
-                <p className="mt-1 text-4xl font-light tabular-nums tracking-tight">{weekPct}<span className="text-xl text-ink/50">%</span></p>
+                <p className="mt-1 text-4xl font-light tabular-nums tracking-tight">{viewPct}<span className="text-xl text-ink/50">%</span></p>
                 <div className="relative mt-3 h-1.5 rounded-full bg-white/10">
-                  <div className="hb-w h-full rounded-full bg-gradient-to-r from-mint to-blue" style={{ width: ready ? `${weekPct}%` : '0%' }} />
+                  <div className="hb-w wk-fill h-full rounded-full bg-gradient-to-r from-mint to-blue" style={{ width: ready ? `${viewPct}%` : '0%' }} />
                   <span aria-hidden="true" title={`${TARGET * 100}% target`} className="absolute -top-1 h-3.5 w-px bg-white/50" style={{ left: `${TARGET * 100}%` }} />
                 </div>
-                <p className="mt-2 text-xs tabular-nums text-ink/55">{weekT.done} / {weekT.possible} check-ins</p>
+                <p className="mt-2 text-xs tabular-nums text-ink/55">{viewT.done} / {viewT.possible} check-ins</p>
                 <div className="mt-5 grid grid-cols-7 text-center">
                   {perDay.map((p, i) => {
                     const full = p.possible > 0 && p.done === p.possible
-                    const future = i > todayIdx
+                    const future = isFuture(viewWeek[i])
                     return (
                       <div key={i} className="flex flex-col items-center gap-1.5" title={p.possible ? `${NAMES[i]}: ${p.done} of ${p.possible}` : `${NAMES[i]}: nothing scheduled`}>
-                        <span className={`text-[11px] ${i === todayIdx ? 'text-ink' : 'text-ink/55'}`}>{NAMES[i]}</span>
+                        <span className={`text-[11px] ${i === viewToday ? 'text-ink' : 'text-ink/55'}`}>{NAMES[i]}</span>
                         <span className={`grid size-6 place-items-center rounded-full border text-[10px] tabular-nums transition-colors ${
                           full ? 'border-teal bg-teal text-bg' : p.done > 0 ? 'border-teal/60 text-teal' : future || !p.possible ? 'border-dashed border-white/20 text-ink/40' : 'border-red-400/40 text-red-300/70'}`}>
                           {full ? <Icon name="check" className="size-3" /> : p.possible ? p.done : '–'}
@@ -339,24 +357,24 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
                 </div>
               </div>
               <div>
-                <p className="mb-2 text-xs text-ink/60">Check-ins this week</p>
+                <p className="mb-2 text-xs text-ink/60">{off === 0 ? 'Check-ins this week' : 'Check-ins that week'}</p>
                 {scoped.length === 0 && <p className="text-sm text-ink/60">No habits to compare yet.</p>}
                 {scoped.length > 0 && (
                   <div aria-hidden="true" className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px]">
-                    {LETTERS.map((l, i) => <span key={i} className={i === todayIdx ? 'font-semibold text-teal' : 'text-ink/40'}>{l}</span>)}
+                    {LETTERS.map((l, i) => <span key={i} className={i === viewToday ? 'font-semibold text-teal' : 'text-ink/40'}>{l}</span>)}
                   </div>
                 )}
                 <ul className="space-y-3">
-                  {[...scoped].sort((a, b) => percent(b.w) - percent(a.w)).map(h => (
+                  {[...viewRows].sort((a, b) => percent(b.w) - percent(a.w)).map(({ h, cells, w }) => (
                     <li key={h.t.id} style={{ '--c': catById(h.t.catId).color } as CSSProperties}>
                       <div className="flex items-baseline justify-between gap-3 text-sm">
                         <span className="truncate">{h.t.text}</span>
-                        <span className="shrink-0 text-xs tabular-nums text-ink/60">{h.w.done} / {h.w.possible}</span>
+                        <span className="shrink-0 text-xs tabular-nums text-ink/60">{w.done} / {w.possible}</span>
                       </div>
                       {/* One segment per weekday, Monday to Sunday, so a check-in lands under the day it was made. */}
                       <div className="mt-1.5 grid grid-cols-7 gap-1" role="img"
-                        aria-label={`${h.t.text} this week: ${h.week.map((cl, i) => `${NAMES[i]} ${CELL_WORD[cl.state]}`).join(', ')}`}>
-                        {h.week.map((cl, i) => cl.state === 'rest'
+                        aria-label={`${h.t.text} ${weekRelative(off).toLowerCase()}: ${cells.map((cl, i) => `${NAMES[i]} ${CELL_WORD[cl.state]}`).join(', ')}`}>
+                        {cells.map((cl, i) => cl.state === 'rest'
                           ? <span key={i} /> // not scheduled that day: leave the slot empty so the other bars stay under their weekday
                           : <span key={i} className="hb-seg" data-s={cl.state} data-on={cl.state === 'done'} data-today={cl.today} title={`${NAMES[i]}: ${CELL_WORD[cl.state]}`} />)}
                       </div>
