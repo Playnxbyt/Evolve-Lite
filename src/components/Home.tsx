@@ -513,7 +513,7 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
               <h2 className={`${eyebrow} text-ink/70`}>Weekly momentum</h2>
               <span className="flex items-center gap-1 text-xs text-ink/65"><Icon name="flame" className="size-3.5 text-orange-400" />{days} day streak</span>
             </div>
-            <WeekNav className="mb-4" offset={off} dir={nav.dir} label={weekRangeLabel(weekStartOf(now, off))}
+            <WeekNav showReset className="mb-4" offset={off} dir={nav.dir} label={weekRangeLabel(weekStartOf(now, off))}
               canPrev={nav.canPrev} canNext={nav.canNext} onPrev={nav.prev} onNext={nav.next} onReset={nav.reset} />
             <div className="grid grid-cols-7 gap-1.5 text-center">
               {week.map((d, i) => {
@@ -530,14 +530,15 @@ export default function Home({ state, wall, scene, onSetScene, onSetWallFile, on
                 )
               })}
             </div>
-            {(delta !== null || cur !== null) && (
-              <p className="mt-3 text-xs text-ink/60">
-                <SlideText dir={nav.dir} text={off === 0
-                  ? (delta !== null ? `${delta > 0 ? '+' : ''}${delta}% vs last week` : `${Math.round(cur!)}% average this week`)
-                  : `${Math.round(cur ?? 0)}% average${delta !== null ? ` · ${delta > 0 ? '+' : ''}${delta}% vs the week before` : ''}`} />
-              </p>
-            )}
-            {cur === null && off !== 0 && <p className="mt-3 text-xs text-ink/60">Nothing was scheduled this week.</p>}
+            <p className="mt-3 min-h-[2rem] text-xs text-ink/60">
+              {cur === null && off !== 0
+                ? 'Nothing was scheduled this week.'
+                : (delta !== null || cur !== null) && (
+                  <SlideText dir={nav.dir} text={off === 0
+                    ? (delta !== null ? `${delta > 0 ? '+' : ''}${delta}% vs last week` : `${Math.round(cur!)}% average this week`)
+                    : `${Math.round(cur ?? 0)}% average${delta !== null ? ` · ${delta > 0 ? '+' : ''}${delta}% vs the week before` : ''}`} />
+                )}
+            </p>
             <p className="mt-4 flex gap-2.5 border-t border-white/10 pt-4 text-sm leading-relaxed text-ink/75">
               <Icon name="bulb" className="mt-0.5 size-4 shrink-0 text-lifestyle" />{insightText}
             </p>

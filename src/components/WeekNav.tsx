@@ -75,35 +75,45 @@ interface Props {
   onNext: () => void
   onReset: () => void
   className?: string
+  showReset?: boolean
 }
 
-/** Previous / next week pill with a range label, plus a "This week" shortcut that appears once you have moved away. */
-export default function WeekNav({ offset, dir, label, canPrev, canNext, onPrev, onNext, onReset, className }: Props) {
+/** "This week" shortcut, shown only once you have moved away. Kept separate from the pill so the pill never moves. */
+export function WeekReset({ offset, onReset, className }: { offset: number; onReset: () => void; className?: string }) {
+  if (offset === 0) return null
+  return (
+    <button type="button" onClick={onReset}
+      className={`wk-reset shrink-0 rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs text-teal transition-[background-color,transform] duration-200 hover:bg-teal/20 active:scale-95 ${className ?? ''}`}>
+      {offset === -1 ? 'This week' : 'Back to this week'}
+    </button>
+  )
+}
+
+/**
+ * Previous / next week pill with a fixed-width range label so it never resizes or shifts.
+ * With `showReset`, the "This week" shortcut sits at the far end of the row, away from the pill.
+ */
+export default function WeekNav({ offset, dir, label, canPrev, canNext, onPrev, onNext, onReset, className, showReset }: Props) {
   const key = (e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft' && canPrev) { e.preventDefault(); onPrev() }
     if (e.key === 'ArrowRight' && canNext) { e.preventDefault(); onNext() }
   }
   const btn = 'wk-btn grid size-7 place-items-center rounded-full text-ink/70 transition-[background-color,color,transform,opacity] duration-200 hover:bg-white/10 hover:text-ink active:scale-90 disabled:pointer-events-none disabled:opacity-25 focus-visible:outline-2 focus-visible:outline-teal/60'
   return (
-    <div className={`flex items-center gap-2 ${className ?? ''}`}>
+    <div className={`flex items-center justify-between gap-2 ${className ?? ''}`}>
       <div role="group" aria-label="Choose week" onKeyDown={key}
-        className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
+        className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-white/[0.05] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
         <button type="button" aria-label="Previous week" disabled={!canPrev} onClick={onPrev} className={btn}>
           <Icon name="chevron" className="size-4 rotate-180" />
         </button>
-        <span aria-live="polite" className="wk-label min-w-[6.75rem] px-1 text-center text-xs tabular-nums text-ink/80">
+        <span aria-live="polite" className="wk-label w-[8.25rem] px-1 text-center text-xs tabular-nums text-ink/80">
           <SlideText text={label} dir={dir} />
         </span>
         <button type="button" aria-label="Next week" disabled={!canNext} onClick={onNext} className={btn}>
           <Icon name="chevron" className="size-4" />
         </button>
       </div>
-      {offset !== 0 && (
-        <button type="button" onClick={onReset}
-          className="wk-reset rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs text-teal transition-[background-color,transform] duration-200 hover:bg-teal/20 active:scale-95">
-          {offset === -1 ? 'This week' : 'Back to this week'}
-        </button>
-      )}
+      {showReset && <WeekReset offset={offset} onReset={onReset} />}
     </div>
   )
 }

@@ -10,7 +10,7 @@ import { Icon } from './Icons'
 import LiveScene from './LiveScene'
 import { weekStartIndex } from '../lib/preferences'
 import TopBar from './TopBar'
-import WeekNav, { SlideText, useWeekNav, weekRangeLabel, weekRelative } from './WeekNav'
+import WeekNav, { SlideText, WeekReset, useWeekNav, weekRangeLabel, weekRelative } from './WeekNav'
 
 interface Props {
   state: AppState
@@ -219,7 +219,19 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
 
   // The "This week" card can show any earlier week. Everything else on the page stays on the current week.
   const viewWeek = daysOfWeek(addDays(now, off * 7))
-  const viewRows = scoped.map(h => { const cells = viewWeek.map(d => cellFor(state, h.t, d, now)); return { h, cells, w: tally(cells) } })
+  // Weekly history must match the homepage's Weekly momentum, which counts every task that existed on a given day,
+  // including one-off tasks and habits deleted since. So build this card from all tasks, not only today's live habits.
+  const catScoped = (t: Task) => (active === 'all' || t.catId === active) && (!q.trim() || t.text.toLowerCase().includes(q.trim().toLowerCase()))
+  const viewRows = state.tasks.filter(catScoped).flatMap(t => {
+    const cells = viewWeek.map(d => {
+      const c = cellFor(state, t, d, now)
+      // Days on or after a deletion no longer belong to the task (unless it was completed that day).
+      return t.deletedAt != null && startOfDay(d) >= startOfDay(new Date(t.deletedAt)) && c.state !== 'done' ? { ...c, state: 'before' as const } : c
+    })
+    const w = tally(cells)
+    if (w.possible === 0 && w.done === 0 && (t.deletedAt != null || off !== 0)) return []
+    return [{ h: { t }, cells, w }]
+  })
   const viewT = sum(viewRows.map(r => r.w))
   const viewPct = percent(viewT)
   const perDay = viewWeek.map((_, i) => sum(viewRows.map(r => tally([r.cells[i]]))))
@@ -326,8 +338,11 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
           </section>
 
           <section className="glass fade-up rounded-2xl p-5 sm:p-6" style={delay(2)}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <h2 className={`${eyebrow} text-ink/70`}><SlideText dir={nav.dir} text={weekRelative(off)} /></h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <h2 className={`${eyebrow} min-w-[6.5rem] text-ink/70`}><SlideText dir={nav.dir} text={weekRelative(off)} /></h2>
+                <WeekReset offset={off} onReset={nav.reset} />
+              </div>
               <WeekNav offset={off} dir={nav.dir} label={weekRangeLabel(viewWeek[0])}
                 canPrev={nav.canPrev} canNext={nav.canNext} onPrev={nav.prev} onNext={nav.next} onReset={nav.reset} />
             </div>
@@ -374,7 +389,7 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
                       {/* One segment per weekday, Monday to Sunday, so a check-in lands under the day it was made. */}
                       <div className="mt-1.5 grid grid-cols-7 gap-1" role="img"
                         aria-label={`${h.t.text} ${weekRelative(off).toLowerCase()}: ${cells.map((cl, i) => `${NAMES[i]} ${CELL_WORD[cl.state]}`).join(', ')}`}>
-                        {cells.map((cl, i) => cl.state === 'rest'
+                        {cells.map((cl, i) => cl.state === 'rest' || cl.state === 'before'
                           ? <span key={i} /> // not scheduled that day: leave the slot empty so the other bars stay under their weekday
                           : <span key={i} className="hb-seg" data-s={cl.state} data-on={cl.state === 'done'} data-today={cl.today} title={`${NAMES[i]}: ${CELL_WORD[cl.state]}`} />)}
                       </div>
