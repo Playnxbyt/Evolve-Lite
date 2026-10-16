@@ -1127,6 +1127,8 @@ body.effects-off .ambient > i, body.effects-off .halo, body.effects-off .aurora,
 }
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+/* Slide animations and wide children must never widen the page: on phones that makes the browser pan/zoom the whole layout. */
+html, body { max-width: 100%; overflow-x: clip; }
 body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
 * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.16) transparent; }
 

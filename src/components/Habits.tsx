@@ -310,8 +310,8 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
         </div>
       </div>
 
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="space-y-6">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
           <section className="glass fade-up rounded-2xl pb-2 pt-5" style={delay(1)}>
             <div className="mb-3 flex items-baseline justify-between px-5">
               <h2 className={`${eyebrow} text-ink/70`}>Current habits <span className="ml-2 normal-case tracking-normal text-ink/50">{now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></h2>
@@ -337,10 +337,10 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
             )}
           </section>
 
-          <section className="glass fade-up rounded-2xl p-5 sm:p-6" style={delay(2)}>
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <section className="glass fade-up overflow-x-clip rounded-2xl p-5 sm:p-6" style={delay(2)}>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <div className="flex min-w-0 items-center gap-3">
-                <h2 className={`${eyebrow} min-w-[6.5rem] text-ink/70`}><SlideText dir={nav.dir} text={weekRelative(off)} /></h2>
+                <h2 className={`${eyebrow} min-w-[6.5rem] overflow-x-clip text-ink/70`}><SlideText dir={nav.dir} text={weekRelative(off)} /></h2>
                 <WeekReset offset={off} onReset={nav.reset} />
               </div>
               <WeekNav offset={off} dir={nav.dir} label={weekRangeLabel(viewWeek[0])}
@@ -401,7 +401,7 @@ export default function Habits({ state, onAdd, onUpdate, onRemove, onToggle }: P
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <section className="fade-up relative overflow-hidden rounded-2xl border border-white/10" style={delay(2)}>
             <LiveScene theme="twilight" />
             <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,10,20,0.78),rgba(6,10,20,0.2)_80%)]" />

@@ -106,7 +106,7 @@ export default function WeekNav({ offset, dir, label, canPrev, canNext, onPrev, 
         <button type="button" aria-label="Previous week" disabled={!canPrev} onClick={onPrev} className={btn}>
           <Icon name="chevron" className="size-4 rotate-180" />
         </button>
-        <span aria-live="polite" className="wk-label w-[8.25rem] px-1 text-center text-xs tabular-nums text-ink/80">
+        <span aria-live="polite" className="wk-label w-[7.25rem] px-1 sm:w-[8.25rem] text-center text-xs tabular-nums text-ink/80">
           <SlideText text={label} dir={dir} />
         </span>
         <button type="button" aria-label="Next week" disabled={!canNext} onClick={onNext} className={btn}>
